@@ -9,3 +9,8 @@ This project is based on the assumption of a full Python envionment and uses the
 
 Follow the usual instruction at Kivy.org including setting up a virtual environment for the baseline install.
 
+## Running
+
+Activate your virtual environment then run
+
+    $ python main.py
