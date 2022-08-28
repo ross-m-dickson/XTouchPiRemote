@@ -13,16 +13,13 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from random import randint
 
-#bakcground_normal: ''
-#background_color: (0,0,1,1)
-
-class GraphLabel(Label):
-    background_color = ListProperty([0, 0, 0, 1])
-    percent = NumericProperty(1)
-
+# Data structure to represent a Channel Strip
 class GraphBox(BoxLayout):
-    background_color = ListProperty([0, 0, 0, 1])
+    # color of the bar graph
+    bar_color = ListProperty([0, 0, 0, 1])
+    # height of the bar as a percent of the box size
     percent = NumericProperty(1)
+    # lebels to place top middle and bottom of the box
     top_text = StringProperty("Top")
     mid_text = StringProperty("Mid")
     bot_text = StringProperty("Bot")
@@ -46,21 +43,16 @@ class XRemGUI(Widget):
     channel_graphs = [None] * 16
  
     def paint_buttons(self):
-        #for x in range(2):
-            #for y in range (8):
-            #    self.channels.add_widget(Label(text=f'{x*8+y}'))
-            #for y in range (8):
-            #    self.channels.add_widget(GraphLabel(text=self.names[x*8+y],
-            #    background_color = [1, 0, 0, 1], percent = y/8))
-            #for y in range (8):
-            #   self.channels.add_widget(Label(text=self.mic[x*8+y]))
+        # Create the represetnations of the 16 channels strips (GraphBox)
+        # the display has a channel number at top, a channel name in the middle
+        # and a mic type at the bottom. There is an overlay of a bar graph.
         for x in range(16):
-            self.channels.add_widget(GraphBox(background_color = [1,0,0,1], 
-            percent = x/16, top_text = f'{x}', mid_text = self.names[x], 
-            bot_text = self.mic[x]))#, id = f'ch{x}')
+            self.channels.add_widget(GraphBox(bar_color = [1,0,0,1], 
+            percent = x/16, top_text = f'{x+1}', mid_text = self.names[x], 
+            bot_text = self.mic[x]))
 
         for x in range(8):
-            self.second.add_widget(GraphBox(background_color = [1,0,0,1], 
+            self.second.add_widget(GraphBox(bar_color = [1,0,0,1], 
             percent = x/8, top_text = self.names[x], mid_text = "B", bot_text = "C"))
 
     def serve_ball(self):
@@ -85,11 +77,11 @@ class Xrem(App):
     def build(self):
         Window.top = 0
         Window.left = 0
-        game = XRemGUI()
-        game.paint_buttons()
-        game.serve_ball()
-        Clock.schedule_interval(game.update, 1.0 / 60.0)
-        return game
+        GUI = XRemGUI()
+        GUI.paint_buttons()
+        GUI.serve_ball()
+        Clock.schedule_interval(GUI.update, 1.0 / 60.0)
+        return GUI
 
 
 if __name__ == '__main__':

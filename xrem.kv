@@ -1,17 +1,9 @@
 #:kivy 1.0.9
 
-<GraphLabel>:
-    canvas.before:
-        Color:
-            rgba: self.background_color
-        Rectangle:
-            pos: self.pos
-            size: self.width, self.height*self.percent
-
 <GraphBox>:
     canvas.before:
         Color:
-            rgba: self.background_color
+            rgba: self.bar_color
         Rectangle:
             pos: self.pos
             size: self.width, self.height*self.percent
