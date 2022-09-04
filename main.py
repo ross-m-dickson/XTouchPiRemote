@@ -12,9 +12,11 @@ from kivy.vector import Vector
 from kivy.clock import Clock
 from kivy.core.window import Window
 from random import randint
+from collections import deque
 
-# Data structure to represent a Channel Strip
+
 class GraphBox(BoxLayout):
+    "Data structure to represent a Channel Meter Display"
     # color of the bar graph
     bar_color = ListProperty([0, 0, 0, 1])
     # height of the bar as a percent of the box size
@@ -23,6 +25,22 @@ class GraphBox(BoxLayout):
     top_text = StringProperty("Top")
     mid_text = StringProperty("Mid")
     bot_text = StringProperty("Bot")
+
+    # make the level display a 4 element running window
+    values = 4
+    def __init__(self, *args, **kwargs):
+        self.levels = deque(maxlen=self.values)
+        for _ in range(self.values):
+            self.levels.append(-102400)
+        self.mean = -102400 * self.values
+        super().__init__(*args, **kwargs)
+
+    def insert_level(self, value):
+        'push a vlue into the fixed FIFO and update the mean'
+        self.mean = self.mean - self.levels.popleft() + value
+        self.levels.append(value)
+        return self.mean
+
 
 class PongBall(Widget):
     velocity_x = NumericProperty(0)
