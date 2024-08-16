@@ -4,7 +4,6 @@ kivy.require('2.0.0')
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
 from kivy.properties import (
     NumericProperty, ReferenceListProperty, ListProperty, ObjectProperty, StringProperty
 )
@@ -15,16 +14,19 @@ from random import randint
 from collections import deque
 
 
-class GraphBox(BoxLayout):
-    "Data structure to represent a Channel Meter Display"
-    # color of the bar graph
-    bar_color = ListProperty([0, 0, 0, 1])
-    # height of the bar as a percent of the box size
-    percent = NumericProperty(1)
+class ChannelLabels(BoxLayout):
     # lebels to place top middle and bottom of the box
     top_text = StringProperty("Top")
     mid_text = StringProperty("Mid")
-    bot_text = StringProperty("Bot")
+
+class ChannelData(BoxLayout):
+    "Data structure to represent a Channel Meter Display"
+    # color of the bar graph
+    in_color = ListProperty([1, 0, 0, 1])
+    out_color = ListProperty([0, 0, .5, 1])
+    # height of the bar as a percent of the box size
+    in_percent = NumericProperty(1)
+    out_percent = NumericProperty(1)
 
     # make the level display a 4 element running window
     values = 4
@@ -54,25 +56,24 @@ class PongBall(Widget):
 class XRemGUI(Widget):
     ball = ObjectProperty(None)
     channels = ObjectProperty(None)
+    channel_labels = ObjectProperty(None)
     names = ("Bass", "Guitar", "Keys", "Keys", "Sax", "Don", "Kick", "Snare",
              "Raluca", "Ors",  "Itai", "Butch", "Ross", "Guest", "OL", "OR")
-    mic = ("1/4", "1/4", "1/4", "1/4", "pga", "pga", "pga", "58",
-           "58", "ors", "Sms", "M80", "LCT", "", "040", "040")
     channel_graphs = [None] * 16
  
     def paint_buttons(self):
-        # Create the represetnations of the 16 channels strips (GraphBox)
-        # the display has a channel number at top, a channel name in the middle
-        # and a mic type at the bottom. There is an overlay of a bar graph.
+        # Create the represetnations of the 16 channels strips.
+        # There is an overlay of a bar graph.
         for x in range(16):
-            self.channels.add_widget(GraphBox(bar_color = [1,0,0,1], 
-            percent = x/16, top_text = f'{x+1}', mid_text = self.names[x], 
-            bot_text = self.mic[x]))
+            self.channels.add_widget(ChannelData(in_color = [1,0,0,1], 
+            in_percent = x/16))
+            self.channel_labels.add_widget(ChannelLabels(top_text = f'{x+1}',
+            mid_text = self.names[x]))
 
         for x in range(8):
-            self.second.add_widget(GraphBox(bar_color = [1,0,0,1], 
-            percent = x/8, top_text = self.names[x], mid_text = "B", bot_text = "C"))
-
+            self.second.add_widget(ChannelData(in_color = [1,0,0,1], 
+            in_percent = x/8))
+    
     def serve_ball(self):
         self.ball.center = self.center
         self.ball.velocity = Vector(4, 0).rotate(randint(0,360))
@@ -88,7 +89,8 @@ class XRemGUI(Widget):
         if (self.ball.x < 0)  or (self.ball.right > self.width):
             self.ball.velocity_x *= -1
         
-        self.channels.children[3].percent = self.ball.y / self.height
+        self.channels.children[3].in_percent = self.ball.y / self.height
+        self.channels.children[3].out_percent = self.ball.y / self.height / 2
 
 
 class Xrem(App):

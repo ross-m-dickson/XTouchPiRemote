@@ -1,23 +1,61 @@
 #:kivy 1.0.9
 
-<GraphBox>:
+<ChannelLabels>:
+    orientation: "horizontal"
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: "10"
+        Label:
+            text: "5"
+        Label:
+            text: "0"
+        Label:
+            text: "5"
+        Label:
+            text: "10"
+        Label:
+            text: "20"
+        Label:
+            text: "30"
+        Label:
+            text: "50"
+        Label:
+            text: "∞"
+    Label:
+        text: self.parent.top_text
+        canvas.before:
+            PushMatrix
+            Rotate:
+                angle: 90
+                origin: self.center
+        canvas.after:
+            PopMatrix
+    Label:
+        text: self.parent.mid_text
+        canvas.before:
+            PushMatrix
+            Rotate:
+                angle: 90
+                origin: self.center
+        canvas.after:
+            PopMatrix
+
+<ChannelData>:
     canvas.before:
         Color:
-            rgba: self.bar_color
+            rgba: self.in_color
         Rectangle:
-            pos: self.pos
-            size: self.width, self.height*self.percent
-    orientation: "vertical"
-    Label:
-        id: top
-        text: root.top_text
-    Label:
-        id: mid
-        text: root.mid_text
-    Label:
-        id: bot
-        text: root.bot_text
-
+            pos: self.x + self.width/3, self.y
+            size: self.width/3*0.9, self.height*self.in_percent
+        Color:
+            rgba: self.out_color
+        Rectangle:
+            pos: self.x + self.width*2/3, self.y
+            size: self.width/3*0.9, self.height*self.out_percent
+    orientation: "horizontal"
+    Button:
+        background_color: 0,0,0,0
 
 <PongBall>:
     size: 50, 50
@@ -29,12 +67,8 @@
 <XRemGUI>:
     ball: pong_ball
     channels: channels
+    channel_labels: channel_labels
     second: second
-
-    canvas:
-        Rectangle:
-            pos: self.center_x - 5, 0
-            size: 10, self.height
 
     BoxLayout:
         orientation: "horizontal"
@@ -42,8 +76,6 @@
         GridLayout:
             id: channels
             cols: 8
-#            spacing: 10
-#            padding: 10
         BoxLayout:
             orientation: "vertical"
             id: buttons
@@ -55,17 +87,21 @@
                 orientation: "horizontal"
                 id: second
 
-    Label:
-        font_size: 70
-        center_x: root.width / 4
-        top: root.top - 50
-        text: "0"
-
-    Label:
-        font_size: 70
-        center_x: root.width * 3 / 4
-        top: root.top - 50
-        text: "0"
+    BoxLayout:
+        orientation: "horizontal"
+        size: root.width, root.height
+        GridLayout:
+            id: channel_labels
+            cols: 8
+        BoxLayout:
+            orientation: "vertical"
+            id: buttons
+            Button:
+                text: "foo"
+            Button:
+                text: "bar"
+            BoxLayout:
+                orientation: "horizontal"
 
     PongBall:
         id: pong_ball

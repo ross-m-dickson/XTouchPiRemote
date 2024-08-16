@@ -1,7 +1,7 @@
 # XTouchPiRemote
 RaspberryPi based XTouch Mini to XAir Bridge
 
-The goal of this project is to use a Raspberry Pi to bridge between a Behringer XTouch Mini UBS Midi control surface and a Behringer XAir Digital Mixer, specifically an XR18. This is loosely based on https://github.com/peterdikant/xair-remote as filtered through my fork at https://github.com/ross-m-dickson/xair-remote . This is setup as a seperate repo rather than a branch or fork as I'm diverging in almost all respects from the original other than general intent of connecting the XTouch Mini to the XAir. The key reson for the change is that in addition to changing all of the data structers I'm also changing the file struct which is difficult for me to do cleanly in git. Please see the other two repos for the history.
+The goal of this project is to use a Raspberry Pi to bridge between a Behringer XTouch Mini UBS Midi control surface and a Behringer XAir Digital Mixer, specifically an XR18. This is loosely based on https://github.com/peterdikant/xair-remote as filtered through my fork at https://github.com/ross-m-dickson/xair-remote . This is setup as a seperate repo rather than a branch or fork as I'm diverging in almost all respects from the original other than general intent of connecting the XTouch Mini to the XAir. The key resaon for the change is that in addition to changing all of the data structers I'm also changing the file struct which is difficult for me to do cleanly in git. Please see the other two repos for the history.
 
 ## Requirements
 
