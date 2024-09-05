@@ -1,0 +1,7 @@
+git clone git@github.com:ross-m-dickson/XTouchPiRemote.git
+sudo apt update
+sudo apt upgrade
+python -m venv kivy_venv
+source kivy_venv/bin/activate
+python -m pip install "kivy[base]"
+

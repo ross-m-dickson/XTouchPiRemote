@@ -57,6 +57,9 @@ class XRemGUI(Widget):
     ball = ObjectProperty(None)
     channels = ObjectProperty(None)
     channel_labels = ObjectProperty(None)
+    bus_labels = ObjectProperty(None)
+    channel_data = []
+    channel_label_data = []
     names = ("Bass", "Guitar", "Keys", "Keys", "Sax", "Don", "Kick", "Snare",
              "Raluca", "Ors",  "Itai", "Butch", "Ross", "Guest", "OL", "OR")
     channel_graphs = [None] * 16
@@ -65,14 +68,20 @@ class XRemGUI(Widget):
         # Create the represetnations of the 16 channels strips.
         # There is an overlay of a bar graph.
         for x in range(16):
-            self.channels.add_widget(ChannelData(in_color = [1,0,0,1], 
-            in_percent = x/16))
-            self.channel_labels.add_widget(ChannelLabels(top_text = f'{x+1}',
-            mid_text = self.names[x]))
+            self.channel_data.append(ChannelData(in_color = [1,0,0,1],
+                                    in_percent = x/16))
+            self.channels.add_widget(self.channel_data[x])
+            self.channel_label_data.append(ChannelLabels(top_text = f'{x+1}',
+                                    mid_text = self.names[x]))
+            self.channel_labels.add_widget(self.channel_label_data[x])
 
         for x in range(8):
-            self.second.add_widget(ChannelData(in_color = [1,0,0,1], 
+            self.channel_data.append(ChannelData(in_color = [1,0,0,1], 
             in_percent = x/8))
+            self.second.add_widget(self.channel_data[16+x]),
+            self.channel_label_data.append(ChannelLabels(top_text = f'{2*x+1}', 
+                                    mid_text = f'{2*x+2}'))
+            self.bus_labels.add_widget(self.channel_label_data[16+x])
     
     def serve_ball(self):
         self.ball.center = self.center
@@ -97,9 +106,9 @@ class Xrem(App):
     def build(self):
         Window.top = 0
         Window.left = 0
-        GUI = XRemGUI()
-        GUI.paint_buttons()
-        GUI.serve_ball()
+        self.GUI = XRemGUI()
+        self.GUI.paint_buttons()
+        self.GUI.serve_ball()
         Clock.schedule_interval(GUI.update, 1.0 / 60.0)
         return GUI
 

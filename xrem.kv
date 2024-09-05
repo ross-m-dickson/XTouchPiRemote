@@ -68,6 +68,7 @@
     ball: pong_ball
     channels: channels
     channel_labels: channel_labels
+    bus_labels: bus_labels
     second: second
 
     BoxLayout:
@@ -79,10 +80,12 @@
         BoxLayout:
             orientation: "vertical"
             id: buttons
-            Button:
-                text: "foo"
-            Button:
-                text: "bar"
+            BoxLayout:
+                orientation: "horizontal"
+                Button:
+                    text: "foo"
+                Button:
+                    text: "bar"
             BoxLayout:
                 orientation: "horizontal"
                 id: second
@@ -95,13 +98,15 @@
             cols: 8
         BoxLayout:
             orientation: "vertical"
-            id: buttons
-            Button:
-                text: "foo"
-            Button:
-                text: "bar"
             BoxLayout:
                 orientation: "horizontal"
+                Button:
+                    text: "foo"
+                Button:
+                    text: "bar"
+            BoxLayout:
+                orientation: "horizontal"
+                id: bus_labels
 
     PongBall:
         id: pong_ball
