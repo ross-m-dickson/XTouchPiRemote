@@ -1,6 +1,17 @@
 #:kivy 1.0.9
 
-<ChannelLabels>:
+<ChannelData>:
+    canvas.before:
+        Color:
+            rgba: self.in_color
+        Rectangle:
+            pos: self.x + self.width/3, self.y
+            size: self.width/3*0.9, self.height*self.in_percent
+        Color:
+            rgba: self.out_color
+        Rectangle:
+            pos: self.x + self.width*2/3, self.y
+            size: self.width/3*0.9, self.height*self.out_percent
     orientation: "horizontal"
     BoxLayout:
         orientation: "vertical"
@@ -23,7 +34,7 @@
         Label:
             text: "∞"
     Label:
-        text: self.parent.top_text
+        text: self.parent.in_text
         canvas.before:
             PushMatrix
             Rotate:
@@ -32,7 +43,7 @@
         canvas.after:
             PopMatrix
     Label:
-        text: self.parent.mid_text
+        text: self.parent.out_text
         canvas.before:
             PushMatrix
             Rotate:
@@ -40,22 +51,6 @@
                 origin: self.center
         canvas.after:
             PopMatrix
-
-<ChannelData>:
-    canvas.before:
-        Color:
-            rgba: self.in_color
-        Rectangle:
-            pos: self.x + self.width/3, self.y
-            size: self.width/3*0.9, self.height*self.in_percent
-        Color:
-            rgba: self.out_color
-        Rectangle:
-            pos: self.x + self.width*2/3, self.y
-            size: self.width/3*0.9, self.height*self.out_percent
-    orientation: "horizontal"
-    Button:
-        background_color: 0,0,0,0
 
 <PongBall>:
     size: 50, 50
@@ -67,9 +62,7 @@
 <XRemGUI>:
     ball: pong_ball
     channels: channels
-    channel_labels: channel_labels
-    bus_labels: bus_labels
-    second: second
+    buses: buses
 
     BoxLayout:
         orientation: "horizontal"
@@ -79,34 +72,21 @@
             cols: 8
         BoxLayout:
             orientation: "vertical"
-            id: buttons
             BoxLayout:
                 orientation: "horizontal"
+                size_hint_y: .3
+                ToggleButton:
+                    text: "Connect XAir"
+                    on_state: root.connect_mixer(self.state)
+                ToggleButton:
+                    text: "Record"
+                    on_state: root.record(self.state)
                 Button:
-                    text: "foo"
-                Button:
-                    text: "bar"
+                    text: "Quit"
+                    on_press: root.quit() 
             BoxLayout:
                 orientation: "horizontal"
-                id: second
-
-    BoxLayout:
-        orientation: "horizontal"
-        size: root.width, root.height
-        GridLayout:
-            id: channel_labels
-            cols: 8
-        BoxLayout:
-            orientation: "vertical"
-            BoxLayout:
-                orientation: "horizontal"
-                Button:
-                    text: "foo"
-                Button:
-                    text: "bar"
-            BoxLayout:
-                orientation: "horizontal"
-                id: bus_labels
+                id: buses
 
     PongBall:
         id: pong_ball

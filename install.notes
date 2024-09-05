@@ -4,4 +4,6 @@ sudo apt upgrade
 python -m venv kivy_venv
 source kivy_venv/bin/activate
 python -m pip install "kivy[base]"
+python -m pip install netifaces
+python -m pip install python-osc
 
