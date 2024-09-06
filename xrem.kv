@@ -53,15 +53,7 @@
         canvas.after:
             PopMatrix
 
-<PongBall>:
-    size: 50, 50
-    canvas:
-        Ellipse:
-            pos: self.pos
-            size: self.size
-
 <XRemGUI>:
-    ball: pong_ball
     channels: channels
     buses: buses
 
@@ -89,7 +81,3 @@
             BoxLayout:
                 orientation: "horizontal"
                 id: buses
-
-    PongBall:
-        id: pong_ball
-        center: self.parent.center

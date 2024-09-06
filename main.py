@@ -7,10 +7,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import (
     NumericProperty, ReferenceListProperty, ListProperty, ObjectProperty, StringProperty
 )
-from kivy.vector import Vector
-from kivy.clock import Clock
 from kivy.core.window import Window
-from random import randint
 import os
 import struct
 from lib.xair import XAirClient, find_mixer
@@ -70,13 +67,9 @@ class PongBall(Widget):
 
 
 class XRemGUI(Widget):
-    ball = ObjectProperty(None)
-    # kivy storage for channels
-    channels = ObjectProperty(None)
-    # kivy storage for buses
-    buses = ObjectProperty(None)
-    # python storage for channels and buses
-    channel_data = []
+    channels = ObjectProperty(None) # kivy storage for channels
+    buses = ObjectProperty(None)    # kivy storage for buses
+    channel_data = []               # python storage for channels and buses
     # xair connection info
     xair_address = None
     xair_client = None
@@ -195,24 +188,6 @@ class XRemGUI(Widget):
         except:
             exit()
 
-    def serve_ball(self):
-        self.ball.center = self.center
-        self.ball.velocity = Vector(4, 0).rotate(randint(0,360))
-
-    def update(self, dt):
-        self.ball.move()
-
-        # bounce off top and bottom
-        if (self.ball.y < 0)  or (self.ball.top > self.height):
-            self.ball.velocity_y *= -1
-
-        # bounce off left and right
-        if (self.ball.x < 0)  or (self.ball.right > self.width):
-            self.ball.velocity_x *= -1
-        
-        self.channels.children[3].in_percent = self.ball.y / self.height
-        self.channels.children[3].out_percent = self.ball.y / self.height / 2
-
 
 class Xrem(App):
     def build(self):
@@ -220,8 +195,6 @@ class Xrem(App):
         Window.left = 0
         self.GUI = XRemGUI()
         self.GUI.paint_buttons()
-        self.GUI.serve_ball()
-        Clock.schedule_interval(self.GUI.update, 1.0 / 60.0)
         return self.GUI
 
 
