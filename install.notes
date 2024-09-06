@@ -12,4 +12,13 @@ python -m pip install python-osc
 
 # create desktop launcher
 ln -s /home/pi/code/XTouchPiRemote/XTouchPiRemote.desktop /home/pi/.local/share/applications/
-# add to ~/.config/wf-panel-pi.ini
+# add to ~/.config/wf-panel-pi.ini   92  nmcli con show
+
+#setup networking
+nmcli connection show
+sudo nmcli connection add type bridge ifname br0 stp no
+sudo nmcli connection add type bridge-slave ifname eth0 master br0
+sudo nmcli connection add type bridge-slave ifname eth1 master br0
+sudo nmcli connection add type bridge-slave ifname eth2 master br0
+sudo nmcli connection modify "bridge-br0" ipv4.method shared
+nmcli connection show
