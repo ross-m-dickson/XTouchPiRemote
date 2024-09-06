@@ -56,6 +56,7 @@
 <XRemGUI>:
     channels: channels
     buses: buses
+    xair_button: xair_button
 
     BoxLayout:
         orientation: "horizontal"
@@ -70,7 +71,8 @@
                 size_hint_y: .3
                 ToggleButton:
                     text: "Connect XAir"
-                    on_state: root.connect_mixer(self.state)
+                    id: xair_button
+                    on_press: root.connect_mixer(self.state)
                 ToggleButton:
                     text: "Record"
                     on_state: root.record(self.state)

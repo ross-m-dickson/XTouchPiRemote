@@ -69,6 +69,7 @@ class PongBall(Widget):
 class XRemGUI(Widget):
     channels = ObjectProperty(None) # kivy storage for channels
     buses = ObjectProperty(None)    # kivy storage for buses
+    xair_button = ObjectProperty(None) # kivy storage for button
     channel_data = []               # python storage for channels and buses
     # xair connection info
     xair_address = None

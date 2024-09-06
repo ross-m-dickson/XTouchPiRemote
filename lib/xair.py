@@ -67,6 +67,7 @@ class XAirClient:
         if len(self.info_response) > 0:
             print('Successfully connected to %s with firmware %s at %s.' % (self.info_response[2],
                     self.info_response[3], self.info_response[0]))
+            self.state.xair_button.text = self.info_response[0]
             # now start polling refresh /xremote command while running
             xair_thread = threading.Thread(target=self.refresh_connection)
             xair_thread.daemon = True
