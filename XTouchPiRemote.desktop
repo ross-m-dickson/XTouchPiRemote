@@ -1,0 +1,7 @@
+[Desktop Entry]
+Comment=
+Terminal=false
+Name=XAir Control
+Exec=/home/pi/code/XTouchPiRemote/start.sh
+Type=Application
+Icon=volume-knob
