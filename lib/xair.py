@@ -48,6 +48,9 @@ class XAirClient:
     def __init__(self, address, state):
         self.state = state
         dispatcher = Dispatcher()
+        dispatcher.map("/meters/*", self.state.received_meters)
+        dispatcher.map("/xinfo", self.msg_handler)
+        dispatcher.map("/-*", self.null_handler)
         dispatcher.set_default_handler(self.msg_handler)
         self.server = OSCClientServer((address, self.XAIR_PORT), dispatcher)
         worker = threading.Thread(target=self.run_server)
@@ -87,21 +90,20 @@ class XAirClient:
             self.server = None
         # not needed for xair_thread which reads quit_called
 
+    def null_handler(self, addr, *data):
+        "Drop known irrelevant OSC messages."
+        pass
+
     def msg_handler(self, addr, *data):
         "Dispatch received OSC messages based on message type."
         if self.state is None or self.state.quit_called:
             self.stop_server()
             return
-        #print 'OSCReceived("%s", %s, %s)' % (addr, tags, data)
-        if addr.endswith('/fader') or addr.endswith('/on') or addr.endswith('/level') or \
+        if addr == '/xinfo':
+            self.info_response = data[:]
+        elif addr.endswith('/fader') or addr.endswith('/on') or addr.endswith('/level') or \
                 addr.startswith('/config/mute') or addr.endswith('/gain') or addr.startswith('/fx/'):
             self.state.received_osc(addr, data[0])
-        elif addr == '/xinfo':
-            self.info_response = data[:]
-        elif addr.startswith('/meters'):
-            self.state.received_meters(addr, data)
-        elif addr.startswith('/-'):
-            pass
         else:
             print('OSCReceived("%s", %s)' % (addr, data))
 

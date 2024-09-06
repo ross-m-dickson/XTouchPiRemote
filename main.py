@@ -108,10 +108,9 @@ class XRemGUI(Widget):
 # meters 1 pre_fader: channels, aux_in, fx, aux_out, fx_send, main, monitor
 # meters 2 input in, aux in, usb in
 # meters 5 aux out, main out, ultranet out, usb out, phones out
-    def received_meters(self, addr, data):
+    def received_meters(self, addr, *data):
         "receive an OSC Meters packet"
         meter_num = int(addr.split('/',)[-1]) # last element of OSC path
-        print("received meter %s" % meter_num) 
         data_size = struct.unpack("<L", data[0][0:4])[0]
         for i in range(data_size):
             value = struct.unpack("<h", data[0][(4+(i*2)):4+((i+1)*2)])[0]
@@ -123,7 +122,6 @@ class XRemGUI(Widget):
                 if i < 18:       # 16 inputs and 2 Aux
                     self.channel_data[i].update_out(value)
             elif meter_num == 5: # outputs
-                print("meter %s has value %s" % (i, value/256))
                 if i < 8:        # aux_out, main
                     bus_num = int(i/2)
                     ch_num = 17 + bus_num
