@@ -61,6 +61,11 @@ class XAirClient:
         if len(self.info_response) > 0:
             print('Successfully connected to %s with firmware %s at %s.' % (self.info_response[2],
                     self.info_response[3], self.info_response[0]))
+            # now start polling refresh /xremote command while running
+            xair_thread = threading.Thread(target=self.refresh_connection)
+            xair_thread.daemon = True
+            xair_thread.start()
+
         else:
             print('Error: Failed to setup OSC connection to mixer.',
                   'Please check for correct ip address.')
@@ -80,6 +85,7 @@ class XAirClient:
         if self.server is not None:
             self.server.shutdown()
             self.server = None
+        # not needed for xair_thread which reads quit_called
 
     def msg_handler(self, addr, *data):
         "Dispatch received OSC messages based on message type."
@@ -96,22 +102,22 @@ class XAirClient:
             self.state.received_meters(addr, data)
         elif addr.startswith('/-'):
             pass
-        else:         #if self.state.debug and addr.start:
+        else:
             print('OSCReceived("%s", %s)' % (addr, data))
 
-    def refresh_connection(self): # the main loop
+    def refresh_connection(self): # the thread to ping the XAir every _REFRESH_TIMEOUT
         """
         Tells mixer to send changes in state that have not been received from this OSC Client
           /xremote        - all parameter changes are broadcast to all active clients (Max 4)
-          /xremotefnb     - No Feed Back. Parameter changes are only sent to the active clients
+          /xremotenfb     - No Feed Back. Parameter changes are only sent to the active clients
                                                                 which didn't initiate the change
         """
-        if self.state.debug:
-            print("Refresh Connection %s" % self.state.levels)
         try:
             while not self.state.quit_called and self.server is not None:
                 self.server.send_message("/xremotenfb", None)
+                self.send(address="/meters", param=["/meters/1"])
                 self.send(address="/meters", param=["/meters/2"])
+                self.send(address="/meters", param=["/meters/5"])
                 time.sleep(self._REFRESH_TIMEOUT)
                 if self.state.quit_called:
                     self.stop_server()

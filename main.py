@@ -11,10 +11,10 @@ from kivy.vector import Vector
 from kivy.clock import Clock
 from kivy.core.window import Window
 from random import randint
-from collections import deque
-
 import os
+import struct
 from lib.xair import XAirClient, find_mixer
+
 
 class ChannelData(BoxLayout):
     "Data structure to represent a Channel Meter Display"
@@ -22,27 +22,43 @@ class ChannelData(BoxLayout):
     in_text = StringProperty("Top")
     out_text = StringProperty("Mid")
     # color of the bar graph
-    in_color = ListProperty([1, 0, 0, 1])
-    out_color = ListProperty([0, 0, .5, 1])
+    red = [.8, 0, 0, 1]
+    blue = [0, 0, .5, 1]
+    green = [0, .5, 0, 1]
+    in_color = ListProperty(blue)
+    out_color = ListProperty(red)
+    post_color = ListProperty(green)
     # height of the bar as a percent of the box size
     in_percent = NumericProperty(1)
     out_percent = NumericProperty(1)
+    post_percent = NumericProperty(0)
 
-    # make the level display a 4 element running window
-    values = 4
-    def __init__(self, *args, **kwargs):
-        self.levels = deque(maxlen=self.values)
-        for _ in range(self.values):
-            self.levels.append(-102400)
-        self.mean = -102400 * self.values
-        super().__init__(*args, **kwargs)
+    # meter values are sent as 16bit signed int mapped to -128db to 128db
+    # 1/256 db resolution, aka .004 dB, realistic values max at 0db
+    def scale_value(self, value):
+        "scales 16bit unsigned meter value for display"
+        value = value/256 + 60  # convert to DB and shift by 60 DB
+        if value < 0:       #floor the value at -60 db
+            value = 0
+        if value > 50:      # expand top 10 db into 20
+            value = ((value - 50) * 2) + 50 
+        color = self.green  # default color
+        if value < 10:
+            color = self.blue   # color if very low
+        elif value > 62:
+            color = self.red    # clipping
+        return (value / 70, color)  # scale to between 0 and 1
 
-    def insert_level(self, value):
-        'push a vlue into the fixed FIFO and update the mean'
-        self.mean = self.mean - self.levels.popleft() + value
-        self.levels.append(value)
-        return self.mean
+    #updated meter value based on 16 bit unsigned value showing
+    #-128db to +128db in db/256 increments
+    def update_in(self, value):
+        (self.in_percent, self.in_color) = self.scale_value(value)
 
+    def update_out(self, value):
+        (self.out_percent, self.out_color) = self.scale_value(value)
+
+    def update_post(self, value):
+        (self.post_percent, self.post_color) = self.scale_value(value)
 
 class PongBall(Widget):
     velocity_x = NumericProperty(0)
@@ -73,19 +89,61 @@ class XRemGUI(Widget):
     record_file = ""
  
     def paint_buttons(self):
-        # Create the represetnations of the 16 channels strips.
-        # There is an overlay of a bar graph.
-        for x in range(16):
-            self.channel_data.append(ChannelData(in_color = [1,0,0,1],
-                                    in_percent = x/16, in_text = f'{x+1}',
+        for x in range(16):     # Create the 16 channels strips.
+            self.channel_data.append(ChannelData(in_text = f'{x+1}',
                                     out_text = f'Channel {x+1}'))
             self.channels.add_widget(self.channel_data[x])
 
-        for x in range(8):
-            self.channel_data.append(ChannelData(in_color = [1,0,0,1], 
-                                    in_percent = x/8, in_text = f'Aux {2*x+1}', 
-                                    out_text = f'Aux {2*x+2}'))
-            self.buses.add_widget(self.channel_data[16+x])
+        self.channel_data.append(ChannelData(in_text = f'Aux L', 
+                                out_text = f'Aux R'))
+        self.buses.add_widget(self.channel_data[16])
+
+        for x in range(3):      # Create 6 Output Bus
+            self.channel_data.append(ChannelData(in_percent = x/8,
+                                    in_text = f'Bus {2*x+1}', 
+                                    out_text = f'Bus {2*x+2}'))
+            self.buses.add_widget(self.channel_data[17+x])
+
+        self.channel_data.append(ChannelData(in_color = [1,0,0,1], 
+                                in_text = f'Main L', 
+                                out_text = f'Main R'))
+        self.buses.add_widget(self.channel_data[20])
+
+# the meter subscription is setup in the xair_client in the refresh method that runs
+# every 5s a subscription sends values every 50ms for 10s
+#
+# meters 1 pre_fader: channels, aux_in, fx, aux_out, fx_send, main, monitor
+# meters 2 input in, aux in, usb in
+# meters 5 aux out, main out, ultranet out, usb out, phones out
+    def received_meters(self, addr, data):
+        "receive an OSC Meters packet"
+        meter_num = int(addr.split('/',)[-1]) # last element of OSC path
+        print("received meter %s" % meter_num) 
+        data_size = struct.unpack("<L", data[0][0:4])[0]
+        for i in range(data_size):
+            value = struct.unpack("<h", data[0][(4+(i*2)):4+((i+1)*2)])[0]
+
+            if meter_num == 2:   # inputs
+                if i < 18:       # 16 inputs and 2 Aux
+                    self.channel_data[i].update_in(value)
+            elif meter_num == 1: # pre_fader
+                if i < 18:       # 16 inputs and 2 Aux
+                    self.channel_data[i].update_out(value)
+            elif meter_num == 5: # outputs
+                print("meter %s has value %s" % (i, value/256))
+                if i < 8:        # aux_out, main
+                    bus_num = int(i/2)
+                    ch_num = 17 + bus_num
+                    if i%2:
+                        self.channel_data[ch_num].update_out(value)
+                    else:
+                        self.channel_data[ch_num].update_in(value)
+                elif i < 24:
+                    ch_num = i - 8
+                    self.channel_data[ch_num].update_post(value)
+            if i > 23:
+                break
+        # ignore other meter types
 
     def connect_mixer(self, state):
         if state == "down":

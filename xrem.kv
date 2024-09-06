@@ -5,20 +5,21 @@
         Color:
             rgba: self.in_color
         Rectangle:
-            pos: self.x + self.width/3, self.y
-            size: self.width/3*0.9, self.height*self.in_percent
+            pos: self.x + self.width * .1, self.y
+            size: self.width/3*0.8, self.height*self.in_percent
         Color:
             rgba: self.out_color
         Rectangle:
-            pos: self.x + self.width*2/3, self.y
-            size: self.width/3*0.9, self.height*self.out_percent
+            pos: self.x + self.width * .1 + self.width * 1/3, self.y
+            size: self.width/3*0.8, self.height*self.out_percent
+        Color:
+            rgba: self.post_color
+        Rectangle:
+            pos: self.x + self.width * .1 + self.width*2/3, self.y
+            size: self.width/3*0.8, self.height*self.post_percent
     orientation: "horizontal"
     BoxLayout:
         orientation: "vertical"
-        Label:
-            text: "10"
-        Label:
-            text: "5"
         Label:
             text: "0"
         Label:
@@ -30,9 +31,9 @@
         Label:
             text: "30"
         Label:
-            text: "50"
+            text: "40"
         Label:
-            text: "∞"
+            text: "50"
     Label:
         text: self.parent.in_text
         canvas.before:
@@ -84,6 +85,7 @@
                 Button:
                     text: "Quit"
                     on_press: root.quit() 
+                    on_release: root.quit() 
             BoxLayout:
                 orientation: "horizontal"
                 id: buses
