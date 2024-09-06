@@ -52,6 +52,7 @@ class XAirClient:
         dispatcher.map("/xinfo", self.msg_handler)
         dispatcher.map("/-*", self.null_handler)
         dispatcher.map("/rtn*", self.null_handler)
+        dispatcher.map("/*/*/*/fader", self.null_handler)
         dispatcher.map("/*/*/config/name", self.state.name_handler)
         dispatcher.set_default_handler(self.msg_handler)
         self.server = OSCClientServer((address, self.XAIR_PORT), dispatcher)
