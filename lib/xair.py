@@ -51,6 +51,8 @@ class XAirClient:
         dispatcher.map("/meters/*", self.state.received_meters)
         dispatcher.map("/xinfo", self.msg_handler)
         dispatcher.map("/-*", self.null_handler)
+        dispatcher.map("/rtn*", self.null_handler)
+        dispatcher.map("/*/*/config/name", self.state.name_handler)
         dispatcher.set_default_handler(self.msg_handler)
         self.server = OSCClientServer((address, self.XAIR_PORT), dispatcher)
         worker = threading.Thread(target=self.run_server)
@@ -68,6 +70,16 @@ class XAirClient:
             xair_thread = threading.Thread(target=self.refresh_connection)
             xair_thread.daemon = True
             xair_thread.start()
+
+            # read_initial_state
+            for channel in range(16):
+                self.send('/ch/{:0>2d}/config/name'.format(channel + 1))
+                time.sleep(self._WAIT_TIME)
+            for channel in range(6):
+                self.send('/bus/{:0>1d}/config/name'.format(channel + 1))
+                time.sleep(self._WAIT_TIME)
+            self.send('/rtn/aux/config/name')
+            time.sleep(self._WAIT_TIME)
 
         else:
             print('Error: Failed to setup OSC connection to mixer.',
@@ -101,9 +113,6 @@ class XAirClient:
             return
         if addr == '/xinfo':
             self.info_response = data[:]
-        elif addr.endswith('/fader') or addr.endswith('/on') or addr.endswith('/level') or \
-                addr.startswith('/config/mute') or addr.endswith('/gain') or addr.startswith('/fx/'):
-            self.state.received_osc(addr, data[0])
         else:
             print('OSCReceived("%s", %s)' % (addr, data))
 

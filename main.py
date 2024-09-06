@@ -136,6 +136,25 @@ class XRemGUI(Widget):
                 break
         # ignore other meter types
 
+    def name_handler(self, addr, *data):
+        "receive a channel/bus/aux name update"
+        elements = addr.split('/') # first three parts of the OSC path
+        if data[0] != "":
+            if elements[1] == "ch":
+                ch_num = int(elements[2])
+                self.channel_data[ch_num - 1].out_text = data[0]
+            elif elements[1] == "bus":
+                bus = int(elements[2])
+                ch_num = int((bus - 1)/2) + 17
+                if int(bus - 1)%2:
+                    self.channel_data[ch_num].out_text = data[0]
+                else:
+                    self.channel_data[ch_num].in_text = data[0]
+            elif elements[1] == "rtn" and elements[2] == "aux":
+                self.channel_data[16].in_text = "%s L" % data[0]
+                self.channel_data[16].out_text = "%s R" % data[0]
+        # ignore other names
+
     def connect_mixer(self, state):
         if state == "down":
             self.quit_called = False
