@@ -10,6 +10,8 @@ from kivy.properties import (
 from kivy.core.window import Window
 import os
 import struct
+import datetime
+import subprocess
 from lib.xair import XAirClient, find_mixer
 
 
@@ -76,10 +78,11 @@ class XRemGUI(Widget):
     xair_client = None
 
     # setup for recording xair audio
-    rec_proc = None
+    rec_proc = 0
     my_env = os.environ.copy()
-    my_env['AUDIODEV'] = 'hw:X18XR18,0'
-    record_command = ['rec', '-q', '--buffer', '262144', '-c', '18', '-b', '24']
+    my_env['AUDIODEV'] = 'plughw:CARD=X18XR18'
+    record_command = ['rec', '-q', '-c', '18', '-b', '24']
+#    record_command = ['rec', '-c', '18', '-b', '24']
     record_file = ""
  
     def paint_buttons(self):
@@ -157,7 +160,9 @@ class XRemGUI(Widget):
         # ignore other names
 
     def connect_mixer(self, state):
-        if state == "down":
+        if state: # == "down":
+            if self.xair_client is not None:
+                return True
             self.quit_called = False
             # determine the mixer address
             if self.xair_address is None:
@@ -180,24 +185,33 @@ class XRemGUI(Widget):
                 self.xair_client = None
 
     def record(self, state):
-        if state == "down":
-            if self.rec_proc is not None:
-                try:
-                    self.record_file = '/media/pi/ExternalSSD/%s.caf' % \
+        print("record start %s" % state)
+        if state: # == "down":
+            print("mid %s" % self.rec_proc)
+            print(self.record_command)
+            if self.rec_proc == 0:
+                print("starting %s" % state)
+#                    self.record_file = '/media/pi/ExternalSSD/%s.caf' % \
+                self.record_file = '/home/pi/recordings/%s.caf' % \
                         datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
-                    self.rec_proc = subprocess.Popen(self.record_command + \
+                print(self.record_file)
+                self.rec_proc = subprocess.Popen(self.record_command + \
                         [self.record_file], env=self.my_env)
-                except OSError:
-                    if self.rec_proc is not None:
-                        self.rec_proc.terminate()
+                print(self.record_command + \
+                        [self.record_file])
+#                except OSError:
+#                    print("Error")
+#                    if self.rec_proc is not None:
+#                       self.rec_proc.terminate()
         else:
-            if self.rec_proc is not None:
+            print("stopping")
+            if self.rec_proc != 0:
                 self.rec_proc.terminate()
 
     def quit(self):
         self.quit_called = True
         try:
-            if self.rec_proc is not None:
+            if self.rec_proc != 0:
                 self.rec_proc.terminate()
             if self.xair_client is not None:
                 self.xair_client.stop_server()

@@ -66,20 +66,33 @@
             cols: 8
         BoxLayout:
             orientation: "vertical"
-            BoxLayout:
-                orientation: "horizontal"
+            GridLayout:
+                cols: 3
+#                orientation: "horizontal"
                 size_hint_y: .3
-                ToggleButton:
+                Button:
                     text: "Connect XAir"
                     id: xair_button
-                    on_press: root.connect_mixer(self.state)
-                ToggleButton:
+#                    on_press: root.connect_mixer(self.state)
+                    on_press: root.connect_mixer(True)
+                Button:
                     text: "Record"
-                    on_state: root.record(self.state)
+#                    on_state: root.record(self.state)
+                    on_press: root.record(True)
                 Button:
                     text: "Quit"
                     on_press: root.quit() 
-                    on_release: root.quit() 
+                    on_release: root.quit()
+                Button:
+                    text: "Disconnect XAir"
+                    on_press: root.connect_mixer(False)
+                Button:
+                    text: "Stop"
+                    on_press: root.record(False)
+                Button:
+                    text: "Quit"
+                    on_press: root.quit() 
+                    on_release: root.quit()
             BoxLayout:
                 orientation: "horizontal"
                 id: buses
