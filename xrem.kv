@@ -34,24 +34,86 @@
             text: "40"
         Label:
             text: "50"
-    Label:
-        text: self.parent.in_text
-        canvas.before:
-            PushMatrix
-            Rotate:
-                angle: 90
-                origin: self.center
-        canvas.after:
-            PopMatrix
-    Label:
-        text: self.parent.out_text
-        canvas.before:
-            PushMatrix
-            Rotate:
-                angle: 90
-                origin: self.center
-        canvas.after:
-            PopMatrix
+#   f"{self.ch_num} {self.gain} {self.ratio[0]} {self.thr[0]} {self.mgain[0]}"
+#   f"{self.ch_name} {self.color} {self.ratio[1]} {self.thr[1]} {self.mgain[1]}"
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: self.parent.parent.mgain
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+        Label:
+            text: self.parent.parent.gain
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+        Label:
+            text: self.parent.parent.in_text
+            color: self.parent.parent.color
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+        Label:
+            text: ""
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            text: self.parent.parent.ratio
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+        Label:
+            text: self.parent.parent.thr
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+        Label:
+            text: self.parent.parent.out_text
+            color: self.parent.parent.color
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+        Label:
+            text: ""
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: 90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
 
 <XRemGUI>:
     channels: channels
@@ -66,8 +128,9 @@
             cols: 8
         BoxLayout:
             orientation: "vertical"
+            size_hint_x: .7
             GridLayout:
-                cols: 3
+                cols: 2
 #                orientation: "horizontal"
                 size_hint_y: .3
                 Button:
@@ -75,10 +138,10 @@
                     id: xair_button
 #                    on_press: root.connect_mixer(self.state)
                     on_press: root.connect_mixer(True)
-                Button:
-                    text: "Record"
+#                Button:
+#                    text: "Record"
 #                    on_state: root.record(self.state)
-                    on_press: root.record(True)
+#                    on_press: root.record(True)
                 Button:
                     text: "Quit"
                     on_press: root.quit() 
@@ -86,9 +149,9 @@
                 Button:
                     text: "Disconnect XAir"
                     on_press: root.connect_mixer(False)
-                Button:
-                    text: "Stop"
-                    on_press: root.record(False)
+#                Button:
+#                    text: "Stop"
+#                    on_press: root.record(False)
                 Button:
                     text: "Quit"
                     on_press: root.quit() 

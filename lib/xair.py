@@ -52,9 +52,12 @@ class XAirClient:
         dispatcher.map("/xinfo", self.msg_handler)
         dispatcher.map("/-*", self.null_handler)
         dispatcher.map("/rtn*", self.null_handler)
-        dispatcher.map("/headamp*", self.null_handler)
-        dispatcher.map("/*/*/*/fader", self.null_handler)
+        dispatcher.map("/headamp*", self.state.headamp_handler)
+        dispatcher.map("/*/*/*/fader", self.state.fader_handler)
+        dispatcher.map("/*/*/dyn/*", self.state.dynamics_handler)
         dispatcher.map("/*/*/config/name", self.state.name_handler)
+        dispatcher.map("/ch/*/config/color", self.state.color_handler)
+        dispatcher.map("/lr/*/*", self.state.lr_handler)
         dispatcher.set_default_handler(self.msg_handler)
         self.server = OSCClientServer((address, self.XAIR_PORT), dispatcher)
         worker = threading.Thread(target=self.run_server)
@@ -75,13 +78,35 @@ class XAirClient:
             xair_thread.start()
 
             # read_initial_state
-            for channel in range(16):
-                self.send('/ch/{:0>2d}/config/name'.format(channel + 1))
+            for channel in range(17):
+                self.send('/ch/{:0>2d}/config/name'.format(channel + 1)) #working
+                time.sleep(self._WAIT_TIME)
+                self.send('/ch/{:0>2d}/config/color'.format(channel + 1)) #working
+                time.sleep(self._WAIT_TIME)
+                self.send('/ch/{:0>2d}/dyn/mgain'.format(channel + 1)) #working
+                time.sleep(self._WAIT_TIME)
+                self.send('/ch/{:0>2d}/dyn/ratio'.format(channel + 1))
+                time.sleep(self._WAIT_TIME)
+                self.send('/ch/{:0>2d}/dyn/thr'.format(channel + 1))
+                time.sleep(self._WAIT_TIME)
+                self.send('/headamp/{:0>2d}/gain'.format(channel + 1)) #working
                 time.sleep(self._WAIT_TIME)
             for channel in range(6):
-                self.send('/bus/{:0>1d}/config/name'.format(channel + 1))
+                self.send('/bus/{:0>1d}/config/name'.format(channel + 1)) #working
                 time.sleep(self._WAIT_TIME)
-            self.send('/rtn/aux/config/name')
+                self.send('/bus/{:0>1d}/dyn/ratio'.format(channel + 1))
+                time.sleep(self._WAIT_TIME)
+                self.send('/bus/{:0>1d}/dyn/thr'.format(channel + 1))
+                time.sleep(self._WAIT_TIME)
+            self.send('/rtn/aux/config/name') #working
+            time.sleep(self._WAIT_TIME)
+            self.send('/rtn/aux/mix/fader')
+            time.sleep(self._WAIT_TIME)
+            self.send('/lr/mix/fader')
+            time.sleep(self._WAIT_TIME)
+            self.send('/lr/dyn/thr')
+            time.sleep(self._WAIT_TIME)
+            self.send('/lr/dyn/ratio')
             time.sleep(self._WAIT_TIME)
 
         else:
@@ -128,8 +153,8 @@ class XAirClient:
         """
         try:
             while not self.state.quit_called and self.server is not None:
-                self.server.send_message("/xremotenfb", None)
-                self.send(address="/meters", param=["/meters/1"])
+                self.server.send_message("/xremote", None)
+#                self.send(address="/meters", param=["/meters/1"])
                 self.send(address="/meters", param=["/meters/2"])
                 self.send(address="/meters", param=["/meters/5"])
                 time.sleep(self._REFRESH_TIMEOUT)

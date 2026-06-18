@@ -1,6 +1,14 @@
 import kivy
 kivy.require('2.0.0')
 
+from kivy.config import Config
+
+# Disable window resizing by the user
+Config.set('graphics', 'resizable', '0')
+
+# Set the window to open in full screen (matches your current display's resolution)
+Config.set('graphics', 'fullscreen', 'auto')
+
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
@@ -13,7 +21,21 @@ import struct
 import datetime
 import subprocess
 from lib.xair import XAirClient, find_mixer
+import sys
 
+red = [.8, 0, 0, 1]
+rred = [1, 0, 0, 1]
+green = [0, .5, 0, 1]
+ggreen = [0, .8, 0, 1]
+blue = [0, 0, .5, 1]
+bblue = [0, 0, .9, 1]
+yellow = [.9, .9, 0, 1]
+purple = [.9, 0, .9, 1]
+orange = [1, .6, 0, 1]
+white = [1, 1, 1, 1]
+gray = [1, 1, 1, 1]
+colors = [gray,rred,ggreen,yellow,bblue,purple,orange,white]
+ratios = [1.1, 1.3, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 10, 20, 100]
 
 class ChannelData(BoxLayout):
     "Data structure to represent a Channel Meter Display"
@@ -21,9 +43,6 @@ class ChannelData(BoxLayout):
     in_text = StringProperty("Top")
     out_text = StringProperty("Mid")
     # color of the bar graph
-    red = [.8, 0, 0, 1]
-    blue = [0, 0, .5, 1]
-    green = [0, .5, 0, 1]
     in_color = ListProperty(blue)
     out_color = ListProperty(red)
     post_color = ListProperty(green)
@@ -31,6 +50,12 @@ class ChannelData(BoxLayout):
     in_percent = NumericProperty(1)
     out_percent = NumericProperty(1)
     post_percent = NumericProperty(0)
+    # additional properties for the channel
+    gain = StringProperty("0")
+    ratio = StringProperty("0")
+    thr = StringProperty("0")
+    mgain = StringProperty("0")
+    color = ListProperty(white)
 
     # meter values are sent as 16bit signed int mapped to -128db to 128db
     # 1/256 db resolution, aka .004 dB, realistic values max at 0db
@@ -41,11 +66,13 @@ class ChannelData(BoxLayout):
             value = 0
         if value > 50:      # expand top 10 db into 20
             value = ((value - 50) * 2) + 50 
-        color = self.green  # default color
+        color = ggreen  # default color
         if value < 10:
-            color = self.blue   # color if very low
+            color = blue   # color if very low
+        elif value < 30:
+            color = bblue   # color if very low
         elif value > 62:
-            color = self.red    # clipping
+            color = red    # clipping
         return (value / 70, color)  # scale to between 0 and 1
 
     #updated meter value based on 16 bit unsigned value showing
@@ -58,15 +85,6 @@ class ChannelData(BoxLayout):
 
     def update_post(self, value):
         (self.post_percent, self.post_color) = self.scale_value(value)
-
-class PongBall(Widget):
-    velocity_x = NumericProperty(0)
-    velocity_y = NumericProperty(0)
-    velocity = ReferenceListProperty(velocity_x, velocity_y)
-
-    def move(self):
-        self.pos = Vector(*self.velocity) + self.pos
-
 
 class XRemGUI(Widget):
     channels = ObjectProperty(None) # kivy storage for channels
@@ -88,20 +106,21 @@ class XRemGUI(Widget):
     def paint_buttons(self):
         for x in range(16):     # Create the 16 channels strips.
             self.channel_data.append(ChannelData(in_text = f'{x+1}',
-                                    out_text = f'Channel {x+1}'))
+                                    out_text = f'Ch {x+1}'))
             self.channels.add_widget(self.channel_data[x])
 
-        self.channel_data.append(ChannelData(in_text = f'Aux L', 
+        self.channel_data.append(ChannelData(in_percent = 0, 
+                                in_text = f'Aux L', 
                                 out_text = f'Aux R'))
         self.buses.add_widget(self.channel_data[16])
 
         for x in range(3):      # Create 6 Output Bus
-            self.channel_data.append(ChannelData(in_percent = x/8,
+            self.channel_data.append(ChannelData(in_percent = 0,
                                     in_text = f'Bus {2*x+1}', 
                                     out_text = f'Bus {2*x+2}'))
             self.buses.add_widget(self.channel_data[17+x])
 
-        self.channel_data.append(ChannelData(in_color = [1,0,0,1], 
+        self.channel_data.append(ChannelData(in_color = [0,0,0,1], 
                                 in_text = f'Main L', 
                                 out_text = f'Main R'))
         self.buses.add_widget(self.channel_data[20])
@@ -109,7 +128,7 @@ class XRemGUI(Widget):
 # the meter subscription is setup in the xair_client in the refresh method that runs
 # every 5s a subscription sends values every 50ms for 10s
 #
-# meters 1 pre_fader: channels, aux_in, fx, aux_out, fx_send, main, monitor
+# meters 1 chanel (in): channels, aux_in, fx, aux_out, fx_send, main, monitor
 # meters 2 input in, aux in, usb in
 # meters 5 aux out, main out, ultranet out, usb out, phones out
     def received_meters(self, addr, *data):
@@ -120,23 +139,33 @@ class XRemGUI(Widget):
             value = struct.unpack("<h", data[0][(4+(i*2)):4+((i+1)*2)])[0]
 
             if meter_num == 2:   # inputs
-                if i < 18:       # 16 inputs and 2 Aux
+                if i < 16:       # 16 inputs and 2 Aux
                     self.channel_data[i].update_in(value)
-            elif meter_num == 1: # pre_fader
-                if i < 18:       # 16 inputs and 2 Aux
+                if i == 16:       # Aux L
                     self.channel_data[i].update_out(value)
+                if i == 17:       # Aux R
+                    self.channel_data[i].update_post(value)
+#            elif meter_num == 1: # channel input
+#                if i > 15:       # skip 16 inputs
+#                   if i < 17:       # Aux L
+#                        self.channel_data[i].update_out(value)
+#                   elif i < 18:       # Aux R
+#                        self.channel_data[i-1].update_post(value)
             elif meter_num == 5: # outputs
                 if i < 8:        # aux_out, main
                     bus_num = int(i/2)
                     ch_num = 17 + bus_num
                     if i%2:
-                        self.channel_data[ch_num].update_out(value)
+                        self.channel_data[ch_num].update_post(value)
                     else:
-                        self.channel_data[ch_num].update_in(value)
+                        self.channel_data[ch_num].update_out(value)
                 elif i < 24:
                     ch_num = i - 8
                     self.channel_data[ch_num].update_post(value)
-            if i > 23:
+                elif i < 40:
+                    ch_num = i - 24
+                    self.channel_data[ch_num].update_out(value)
+            if i > 39:
                 break
         # ignore other meter types
 
@@ -146,7 +175,7 @@ class XRemGUI(Widget):
         if data[0] != "":
             if elements[1] == "ch":
                 ch_num = int(elements[2])
-                self.channel_data[ch_num - 1].out_text = data[0]
+                self.channel_data[ch_num - 1].in_text = data[0]
             elif elements[1] == "bus":
                 bus = int(elements[2])
                 ch_num = int((bus - 1)/2) + 17
@@ -158,6 +187,103 @@ class XRemGUI(Widget):
                 self.channel_data[16].in_text = "%s L" % data[0]
                 self.channel_data[16].out_text = "%s R" % data[0]
         # ignore other names
+
+    def color_handler(self, addr, *data):
+        "receive a channel/bus/aux color update"
+        elements = addr.split('/') # first three parts of the OSC path
+        if data[0] != "":
+            if elements[1] == "ch":
+                ch_num = int(elements[2])
+                self.channel_data[ch_num - 1].color = colors[int(data[0])%8]
+        # ignore other colors
+
+    def dynamics_handler(self, addr, *data):
+        "receive a channel/bus/aux dynamics update"
+        elements = addr.split('/') # first three parts of the OSC path
+        if data[0] != "":
+            bus = 0
+            if elements[1] == "ch":
+                ch_num = int(elements[2]) - 1
+            elif elements[1] == "bus":
+                bus = int(elements[2])
+                ch_num = int((bus - 1)/2) + 17
+            elif elements[1] == "lr":
+                ch_num = 16
+            else:
+                return
+#            print(f" dynamics update: ch {ch_num}, {elements[3]}, {data}", file=sys.stderr)
+            if elements[4] == "mgain":
+                if bus in (1, 3, 5):
+                    # won't happen as mgain isn't sent by bus
+                    self.channel_data[ch_num].gain = f"mg {float(data[0])*24:.1f}"
+                else:
+                    self.channel_data[ch_num].mgain = f"mg {float(data[0])*24:.1f}"
+                return
+            elif elements[4] == "thr":
+                if bus in (1, 3, 5):
+                    self.channel_data[ch_num].gain = f"th {float(data[0])*60-60:.1f}"
+                else:
+                    self.channel_data[ch_num].thr = f"th {float(data[0])*60-60:.1f}"
+                return
+            elif elements[4] == "ratio":
+                if bus in (1, 3, 5):
+                    self.channel_data[ch_num].mgain = f"r {ratios[int(data[0])]}"
+                else:
+                    self.channel_data[ch_num].ratio = f"r {ratios[int(data[0])]}"
+                return
+        # ignore other dynamics
+
+    def scale_fader(self, data):
+        "convert fader float to dB"
+        f = float(data)
+        if f < 0.0625:
+            d = (480 * f) - 90
+        elif f < 0.25:
+            d = (160 * f) - 70
+        elif f < 0.5:
+            d = (80 * f) - 50
+        else:
+            d = (40 * f) - 30
+        if d < -90: 
+            d = -90
+        if d > 10:
+            d = 10
+        return d
+
+    def lr_handler(self, addr, *data):
+        "receive a lr update"
+        elements = addr.split('/') # first three parts of the OSC path
+        if data[0] != "":
+            ch_num = 20
+            if elements[3] == "fader":
+                self.channel_data[20].gain = f"f {self.scale_fader(data[0]):.1f}"
+                self.channel_data[20].mgain = ""
+            elif elements[3] == "thr":
+                self.channel_data[ch_num].thr = f"th {float(data[0])*60-60:.1f}"
+            elif elements[3] == "ratio":
+                self.channel_data[ch_num].ratio = f"r {ratios[int(data[0])]}"
+            return
+    
+    def fader_handler(self, addr, *data):
+        "receive a fader update"
+        elements = addr.split('/') # first three parts of the OSC path
+        if data[0] != "":
+            if elements[1] == "rtn" and elements[2] == "aux" and elements[3] == "mix":
+                self.channel_data[16].mgain = f"f {self.scale_fader(data[0]):.1f}"
+                self.channel_data[16].thr = ""
+                self.channel_data[16].ratio = ""
+            return
+
+    def headamp_handler(self, addr, *data):
+        "receive a headamp update"
+        elements = addr.split('/') # first three parts of the OSC path
+        if data[0] != "":
+            if elements[3] == "gain":
+                ch_num = int(elements[2])
+                if ch_num < 17:
+                    self.channel_data[ch_num -1].gain = f"g {float(data[0])*72-12:.1f}"
+                else:
+                    self.channel_data[ch_num -1].gain = f"g {float(data[0])*32-12:.1f}"
 
     def connect_mixer(self, state):
         if state: # == "down":
