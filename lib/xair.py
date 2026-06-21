@@ -52,6 +52,7 @@ class XAirClient:
         dispatcher.map("/xinfo", self.msg_handler)
         dispatcher.map("/-*", self.null_handler)
         dispatcher.map("/rtn*", self.null_handler)
+        dispatcher.map("/*/*/automix*/*", self.null_handler)
         dispatcher.map("/headamp*", self.state.headamp_handler)
         dispatcher.map("/*/*/*/fader", self.state.fader_handler)
         dispatcher.map("/*/*/dyn/*", self.state.dynamics_handler)

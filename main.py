@@ -56,35 +56,47 @@ class ChannelData(BoxLayout):
     thr = StringProperty("0")
     mgain = StringProperty("0")
     color = ListProperty(white)
+    level = StringProperty("")
+    level_out = StringProperty("")
 
     # meter values are sent as 16bit signed int mapped to -128db to 128db
-    # 1/256 db resolution, aka .004 dB, realistic values max at 0db
+    # 1/256 db resolution, aka .004 dB, values max at 0db
     def scale_value(self, value):
         "scales 16bit unsigned meter value for display"
-        value = value/256 + 60  # convert to DB and shift by 60 DB
-        if value < 0:       #floor the value at -60 db
+        color = ggreen     # default color if good
+        value = value/256  # convert to DB
+        color = ggreen     # default color
+        if value > -7:
+            color = red    # close to clipping
+        elif value < -17:
+            color = bblue   # color if low
+        if value < -27:
+            color = blue  # color if very low
+
+        value = value + 35  # shift by 35 DB to make the sale look right
+        if value < 0:
             value = 0
-        if value > 50:      # expand top 10 db into 20
-            value = ((value - 50) * 2) + 50 
-        color = ggreen  # default color
-        if value < 10:
-            color = blue   # color if very low
-        elif value < 30:
-            color = bblue   # color if very low
-        elif value > 62:
-            color = red    # clipping
-        return (value / 70, color)  # scale to between 0 and 1
+        return (value / 35, color)  # scale to between 0 and 1
+
+    def debug_value(self, value):
+        value = value/256  # convert to DB and shift by 60 DB
+        if value < -70:       #floor the value at -70 db
+            return ""
+        return f"{value:.1f} dB"
 
     #updated meter value based on 16 bit unsigned value showing
     #-128db to +128db in db/256 increments
     def update_in(self, value):
         (self.in_percent, self.in_color) = self.scale_value(value)
+#        self.level = self.debug_value(value)
 
     def update_out(self, value):
         (self.out_percent, self.out_color) = self.scale_value(value)
+        self.level = self.debug_value(value)
 
     def update_post(self, value):
         (self.post_percent, self.post_color) = self.scale_value(value)
+        self.level_out = self.debug_value(value)
 
 class XRemGUI(Widget):
     channels = ObjectProperty(None) # kivy storage for channels
@@ -144,7 +156,7 @@ class XRemGUI(Widget):
                 if i == 16:       # Aux L
                     self.channel_data[i].update_out(value)
                 if i == 17:       # Aux R
-                    self.channel_data[i].update_post(value)
+                    self.channel_data[i-1].update_post(value)
 #            elif meter_num == 1: # channel input
 #                if i > 15:       # skip 16 inputs
 #                   if i < 17:       # Aux L

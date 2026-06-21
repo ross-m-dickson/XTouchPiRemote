@@ -21,19 +21,19 @@
     BoxLayout:
         orientation: "vertical"
         Label:
-            text: "0"
+            text: "2"
         Label:
-            text: "5"
+            text: "7"
         Label:
-            text: "10"
+            text: "12"
         Label:
-            text: "20"
+            text: "17"
         Label:
-            text: "30"
+            text: "22"
         Label:
-            text: "40"
+            text: "27"
         Label:
-            text: "50"
+            text: "32"
 #   f"{self.ch_num} {self.gain} {self.ratio[0]} {self.thr[0]} {self.mgain[0]}"
 #   f"{self.ch_name} {self.color} {self.ratio[1]} {self.thr[1]} {self.mgain[1]}"
     BoxLayout:
@@ -67,7 +67,7 @@
             canvas.after:
                 PopMatrix
         Label:
-            text: ""
+            text: self.parent.parent.level
             canvas.before:
                 PushMatrix
                 Rotate:
@@ -106,7 +106,7 @@
             canvas.after:
                 PopMatrix
         Label:
-            text: ""
+            text: self.parent.parent.level_out
             canvas.before:
                 PushMatrix
                 Rotate:
